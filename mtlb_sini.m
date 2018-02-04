@@ -28,7 +28,7 @@ p_th_set=30e-11; p_th_reset=-4e-5;
 p_rand_i=4;
 %+ p_rand_i=4
 % internal params
-v_off=0; v_on=1e-7;
+v_off=0; v_on=1;
 %+ v_off=0 v_on=1e-7
 %Poole-Frenkel constant
 pfc=1e-1;
@@ -40,7 +40,6 @@ k=1; %index initialization
 t=0; %time initialization
 time(k)=0;
 Im(k)=0;
-Vm(1)=0;
 Vm(k)=0;		 %initialization of the memristor's voltage
 
 %%
@@ -54,7 +53,7 @@ p_sum_pow=0;
 n_sum_pow=-40.139e-6;
 set_th=p_th_set;
 reset_th=p_th_reset;
-state=v_off;
+state(k)=v_off;
 
 i_G_off_p = 0;
 i_G_off_n = 0;
@@ -89,17 +88,17 @@ while (t<=2)
     
     %%
     %state computation
-    if state == v_off
+    if state(k) == v_off
         if p_sum_pow>set_th
-            state = v_on;
+            state(k+1) = v_on;
         else
-            state = v_off;
+            state(k+1) = v_off;
         end
-    elseif state == v_on
+    elseif state(k) == v_on
         if n_sum_pow<reset_th
-            state = v_off;
+            state(k+1) = v_off;
         else
-            state = v_on;
+            state(k+1) = v_on;
         end
     else
         errror = 1 ;
@@ -122,7 +121,7 @@ while (t<=2)
             ( sqrt(q / (d * 4 * pi * eps_i)))) );
     %%
     %Current source selection
-    if state == v_off
+    if state(k) == v_off
         if (Vm(k) > 0)
             Im(k+1) = i_G_off_p;
 %             Vm(k+1)=i_G_off_p*r_on_p;
@@ -157,20 +156,24 @@ while (t<=2)
 
 end
 Im=Im(1:end-1);
+state=state(1:end-1);
 %%
 %Plots:
 
-figure('Position', [10, 10, 1000, 750]), subplot(2,2,1)
-plot(Vm,Im),grid on, title('Pinched hysterisis loop (I-V characteristic)'),xlabel('voltage(Vm)'),ylabel('current(Im)');
+figure('Position', [10, 10, 1000, 750])
+subplot(2,3,[2 3 5 6])
+plot(Vm,log(abs(Im))),grid on, title('Pinched hysterisis loop (I-V characteristic)'),xlabel('voltage(Vm)'),ylabel('current(Im)');
 
 % subplot(2,2,3)
 % plot(time,L),grid on, title('Tunnel barrier width (L)'),xlabel('time(t)'),ylabel('barrier width(L)');
 % 
 % subplot(2,2,4)
 % plot(time,RL),grid on, title('Memristance'),xlabel('time(t)'),ylabel('memristance(RL)');
-
-subplot(2,2,4)
-plot(time,Im)
-
-subplot(2,2,2)
+subplot(2,3,1)
+plot(time,state)
+hold on;
+subplot(2,3,1)
 plot(time,Vm),grid on, title('Programming voltage (Vm)'),xlabel('time(t)'),ylabel('voltage(Vm)');
+hold off;
+subplot(2,3,4)
+plot(time,Im),grid on,  title('Memristor current (Im)'),xlabel('time(t)'),ylabel('current(Im)');
